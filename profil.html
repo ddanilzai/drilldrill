@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Плоский профиль скважины</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Светлая консоль */
+            --bg-app: #F7F5F0;
+            --panel: #FFFFFF;
+            --panel-alt: #F7F4EC;
+            --panel-alt-2: #F0ECE1;
+            --border-subtle: #DCD7C8;
+            --border-faint: #E7E3D6;
+            /* Акценты: янтарь буровой вышки + техническая бирюза */
+            --accent: #E0903F;
+            --accent-strong: #C97A2F;
+            --accent-dim: rgba(224, 144, 63, 0.12);
+            --accent-2: #2E9B96;
+            --accent-2-dim: rgba(46, 155, 150, 0.12);
+            --danger: #D1483C;
+            --danger-dim: rgba(209, 72, 60, 0.1);
+            /* Текст на светлой консоли */
+            --text-hi: #1E2A33;
+            --text-mid: #5C6E7A;
+            --text-low: #93A2AC;
+            /* Светлая «миллиметровка» под график */
+            --paper: #FAFAF6;
+            --paper-line: #E7E4D9;
+            --paper-border: #DDD9CC;
+            /* Шрифты */
+            --font-display: 'Oswald', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background:
+                radial-gradient(circle at 12% 0%, rgba(224, 144, 63, 0.06), transparent 45%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 28px),
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 28px),
+                var(--bg-app);
+            padding: 28px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: var(--panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            box-shadow: 0 12px 40px rgba(30, 42, 51, 0.12);
+            padding: 34px 36px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            /* Верхняя кромка консоли */
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 30%, var(--accent-2) 100%);
+        }
+
+        .title-block {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .title-eyebrow {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75em;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--accent-2);
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            text-align: left;
+            color: var(--text-hi);
+            font-family: var(--font-display);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            font-size: 2em;
+        }
+
+        .title-block-meta {
+            display: flex;
+            gap: 18px;
+            font-family: var(--font-mono);
+            font-size: 0.78em;
+            color: var(--text-low);
+            padding-bottom: 4px;
+        }
+
+        .title-block-meta span {
+            border-left: 2px solid var(--border-subtle);
+            padding-left: 10px;
+            white-space: nowrap;
+        }
+
+        .title-rule {
+            height: 8px;
+            margin: 18px 0 28px;
+            background-image:
+                repeating-linear-gradient(90deg, var(--border-subtle) 0 1px, transparent 1px 16px),
+                repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 96px);
+            background-position: bottom left, bottom left;
+            background-size: 100% 5px, 100% 8px;
+            background-repeat: repeat-x;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 400px 2fr;
+            gap: 28px;
+        }
+
+        .input-section {
+            background: var(--panel-alt);
+            border: 1px solid var(--border-subtle);
+            padding: 20px;
+            border-radius: 8px;
+            height: fit-content;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .input-section::-webkit-scrollbar,
+        .canvas-wrapper::-webkit-scrollbar {
+            width: 9px;
+            height: 9px;
+        }
+
+        .input-section::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .input-section::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 5px;
+        }
+
+        .input-section::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-2);
+        }
+
+        .canvas-wrapper::-webkit-scrollbar-track {
+            background: var(--paper);
+        }
+
+        .canvas-wrapper::-webkit-scrollbar-thumb {
+            background: var(--paper-border);
+            border-radius: 5px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-mid);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-mid);
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            background: var(--panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-hi);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .well-section {
+            background: var(--panel);
+            padding: 15px;
+            margin-bottom: 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-faint);
+            border-left: 3px solid var(--accent);
+        }
+
+        .well-section h3 {
+            color: var(--text-hi);
+            font-family: var(--font-display);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .delete-btn {
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: var(--danger-dim);
+        }
+
+        .add-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .add-btn {
+            padding: 10px;
+            background: var(--panel-alt-2);
+            color: var(--text-mid);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: var(--border-faint);
+            border-color: var(--accent-2);
+            color: var(--text-hi);
+            transform: translateY(-1px);
+        }
+
+        .small-add-btn {
+            margin-top: 10px;
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .interval-group {
+            background: var(--panel-alt-2);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px dashed var(--border-subtle);
+            position: relative;
+        }
+
+        .interval-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .interval-delete-btn:hover {
+            opacity: 0.8;
+        }
+
+        .well-section h3:hover {
+            color: var(--accent-strong);
+        }
+
+        .well-section h3::after {
+            content: '▼';
+            font-size: 0.7em;
+            color: var(--accent-2);
+            transition: transform 0.3s;
+        }
+
+        .well-section.collapsed h3::after {
+            transform: rotate(-90deg);
+        }
+
+        .well-section.draggable {
+            cursor: move;
+        }
+
+        .well-section.draggable h3::before {
+            content: '☰ ';
+            margin-right: 5px;
+            color: var(--text-low);
+        }
+
+        .well-section.dragging {
+            opacity: 0.5;
+        }
+
+        .well-section.drag-over {
+            border-top: 3px solid var(--accent-2);
+        }
+
+        .well-section-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            max-height: 5000px;
+        }
+
+        .well-section.collapsed .well-section-content {
+            max-height: 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: #1A1006;
+            border: none;
+            border-radius: 6px;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: var(--accent-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(224, 144, 63, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .canvas-section {
+            background: var(--paper);
+            border: 1px solid var(--paper-border);
+            padding: 20px;
+            border-radius: 8px;
+            background-image:
+                repeating-linear-gradient(0deg, var(--paper-line) 0 1px, transparent 1px 24px),
+                repeating-linear-gradient(90deg, var(--paper-line) 0 1px, transparent 1px 24px);
+            background-blend-mode: multiply;
+        }
+
+        .canvas-wrapper {
+            overflow: auto;
+            max-height: 80vh;
+            border: 1px solid var(--accent-2);
+            border-radius: 6px;
+            background: white;
+            margin-left: 20px;
+            position: relative;
+        }
+
+        #profileCanvas {
+            display: block;
+            background: white;
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid var(--paper-border);
+            border-left: 3px solid var(--accent-2);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.95em;
+            color: #4A4338;
+        }
+
+        .info-item {
+            margin: 5px 0;
+            font-family: var(--font-mono);
+            font-size: 0.92em;
+            color: #5C5648;
+        }
+
+        .scale-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border: 1px solid var(--paper-border);
+            border-radius: 6px;
+        }
+
+        .scale-controls label {
+            font-weight: 500;
+            color: #4A4338;
+            min-width: 120px;
+            font-size: 0.9em;
+        }
+
+        .scale-controls input[type="range"] {
+            flex: 1;
+            height: 6px;
+            cursor: pointer;
+            accent-color: var(--accent-2);
+        }
+
+        .scale-btn {
+            /* Делаем кнопки шире, чтобы текст не выходил за границы */
+            width: auto;
+            min-width: 60px;
+            padding: 8px 12px;
+            margin-top: 0;
+            font-size: 18px;
+            font-weight: bold;
+            background: var(--accent-2);
+            color: #08221F;
+        }
+
+        .scale-btn:hover {
+            background: #62D1CC;
+            box-shadow: 0 8px 20px rgba(78, 188, 184, 0.3);
+        }
+
+        .reset-btn {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 13px;
+            background: var(--panel-alt-2);
+            color: var(--text-mid);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .reset-btn:hover {
+            background: var(--border-faint);
+            color: var(--text-hi);
+            box-shadow: none;
+        }
+
+        .scale-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 5px;
+        }
+
+        .input-section,
+        .canvas-wrapper {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .canvas-wrapper {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px 10px;
+            }
+
+            .container {
+                padding: 20px 16px 24px;
+                border-radius: 8px;
+            }
+
+            h1 {
+                font-size: 1.4em;
+            }
+
+            .title-block-meta {
+                font-size: 0.7em;
+                gap: 12px;
+            }
+
+            .title-rule {
+                margin: 14px 0 20px;
+            }
+
+            .input-section,
+            .canvas-section {
+                padding: 14px;
+            }
+
+            .well-section {
+                padding: 12px;
+            }
+
+            .input-group input,
+            input[type="number"] {
+                font-size: 16px;
+                padding: 11px 10px;
+            }
+
+            button {
+                padding: 13px;
+                font-size: 14px;
+            }
+
+            .add-buttons {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .add-btn {
+                font-size: 13px;
+                padding: 10px 6px;
+            }
+
+            .scale-controls {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .scale-controls label {
+                min-width: 0;
+                flex: 1 1 auto;
+            }
+
+            .scale-controls input[type="range"] {
+                flex: 1 1 100%;
+                order: 1;
+            }
+
+            .scale-actions {
+                margin-left: 0;
+                flex: 1 1 100%;
+                order: 2;
+                flex-wrap: wrap;
+            }
+
+            .scale-actions .scale-btn {
+                flex: 1 1 auto;
+                font-size: 13px;
+                padding: 9px 8px;
+            }
+
+            .canvas-wrapper {
+                max-height: 60vh;
+            }
+
+            .input-section {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 420px) {
+            h1 {
+                font-size: 1.2em;
+            }
+
+            .title-eyebrow {
+                font-size: 0.68em;
+            }
+
+            .add-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-block">
+            <div>
+                <span class="title-eyebrow">Инженерный расчёт траектории</span>
+                <h1>Плоский профиль скважины</h1>
+            </div>
+            <div class="title-block-meta">
+                <span>Ед. изм. — м</span>
+                <span>Тип — плоский</span>
+            </div>
+        </div>
+        <div class="title-rule"></div>
+
+        <div class="content">
+            <div class="input-section">
+                <!-- Вертикальный участок -->
+                <div class="well-section collapsed" data-section-type="vertical">
+                    <h3 onclick="toggleSection(this)">Вертикальный участок</h3>
+                    <div class="well-section-content">
+                        <div class="input-group">
+                            <label>Длина участка (м):</label>
+                            <input type="number" class="vertical-length" value="500" step="10" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sections-container">
+                    <!-- Участок набора угла -->
+                    <div class="well-section collapsed draggable" data-section-type="build" draggable="true">
+                        <h3 onclick="toggleSection(this)">Участок набора угла <span class="delete-btn" onclick="deleteSection(event, this)">✕</span></h3>
+                        <div class="well-section-content">
+                            <div class="input-group">
+                                <label>Начальный зенитный угол (°):</label>
+                                <input type="number" class="start-angle" value="0" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Конечный зенитный угол (°):</label>
+                                <input type="number" class="end-angle" value="30" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Радиус кривизны (м):</label>
+                                <input type="number" class="radius" value="300" step="10" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>Интенсивность искривления (°/10м):</label>
+                                <input type="number" class="intensity" value="1" step="0.1" min="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Участок стабилизации -->
+                    <div class="well-section collapsed draggable" data-section-type="hold" draggable="true">
+                        <h3 onclick="toggleSection(this)">Участок стабилизации <span class="delete-btn" onclick="deleteSection(event, this)">✕</span></h3>
+                        <div class="well-section-content">
+                            <div class="input-group">
+                                <label>Зенитный угол (°):</label>
+                                <input type="number" class="angle" value="30" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Длина участка (м):</label>
+                                <input type="number" class="length" value="200" step="10" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Участок донабора угла -->
+                    <div class="well-section collapsed draggable" data-section-type="drop" draggable="true">
+                        <h3 onclick="toggleSection(this)">Участок донабора угла <span class="delete-btn" onclick="deleteSection(event, this)">✕</span></h3>
+                        <div class="well-section-content">
+                            <div class="input-group">
+                                <label>Начальный зенитный угол (°):</label>
+                                <input type="number" class="start-angle" value="30" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Конечный зенитный угол (°):</label>
+                                <input type="number" class="end-angle" value="90" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Радиус кривизны (м):</label>
+                                <input type="number" class="radius" value="200" step="10" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>Интенсивность искривления (°/10м):</label>
+                                <input type="number" class="intensity" value="3" step="0.1" min="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Горизонтальный участок -->
+                    <div class="well-section collapsed draggable" data-section-type="horizontal" draggable="true">
+                        <h3 onclick="toggleSection(this)">Горизонтальный участок <span class="delete-btn" onclick="deleteSection(event, this)">✕</span></h3>
+                        <div class="well-section-content">
+                            <div class="input-group">
+                                <label>Зенитный угол (°):</label>
+                                <input type="number" class="angle" value="90" step="0.1" min="0" max="90">
+                            </div>
+                            <div class="input-group">
+                                <label>Длина участка (м):</label>
+                                <input type="number" class="length" value="500" step="10" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="add-buttons">
+                    <button class="add-btn" onclick="addSection('build')">+ Набор угла</button>
+                    <button class="add-btn" onclick="addSection('hold')">+ Стабилизация</button>
+                    <button class="add-btn" onclick="addSection('drop')">+ Донабор угла</button>
+                    <button class="add-btn" onclick="addSection('angleDrop')">+ Сброс угла</button>
+                    <button class="add-btn" onclick="addSection('horizontal')">+ Горизонт</button>
+                </div>
+
+                <!-- Секция Продуктивные пласты -->
+                <div class="well-section" data-section-type="reservoir">
+                    <h3 onclick="toggleSection(this)">Продуктивные пласты</h3>
+                    <div class="well-section-content">
+                        <div id="reservoir-container">
+                            <div class="interval-group reservoir-interval">
+                                <span class="interval-delete-btn" onclick="deleteInterval(event, this)" title="Удалить пласт">✕</span>
+                                <div class="input-group">
+                                    <label>Глубина кровли (м):</label>
+                                    <input type="number" class="reservoir-roof" placeholder="Введите глубину">
+                                </div>
+                                <div class="input-group">
+                                    <label>Глубина подошвы (м):</label>
+                                    <input type="number" class="reservoir-base" placeholder="Введите глубину">
+                                </div>
+                                <div class="input-group">
+                                    <label>Глубина по вертикали T1 (м):</label>
+                                    <input type="number" class="reservoir-t1-depth" placeholder="Введите глубину T1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Смещение T1 (м):</label>
+                                    <input type="number" class="reservoir-t1-offset" placeholder="Введите смещение T1">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="add-btn small-add-btn" onclick="addReservoirInterval()">+ Добавить пласт</button>
+                    </div>
+                </div>
+
+                <!-- Секция Вертикальные границы коридора -->
+                <div class="well-section" data-section-type="corridor">
+                    <h3 onclick="toggleSection(this)">Вертикальные границы коридора</h3>
+                    <div class="well-section-content">
+                        <div id="corridor-container">
+                            <div class="interval-group corridor-interval">
+                                <span class="interval-delete-btn" onclick="deleteInterval(event, this)" title="Удалить границы">✕</span>
+                                <div class="input-group">
+                                    <label>Верхняя граница (м):</label>
+                                    <input type="number" class="corridor-top" placeholder="Введите глубину">
+                                </div>
+                                <div class="input-group">
+                                    <label>Нижняя граница (м):</label>
+                                    <input type="number" class="corridor-bottom" placeholder="Введите глубину">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="add-btn small-add-btn" onclick="addCorridorInterval()">+ Добавить границы</button>
+                    </div>
+                </div>
+
+                <!-- Настройки осей -->
+                <div class="well-section">
+                    <h3 onclick="toggleSection(this)">Настройки осей графика</h3>
+                    <div class="well-section-content">
+                        <div class="input-group">
+                            <label>Шаг сетки (единичный отрезок, м):</label>
+                            <input type="number" id="gridStep" value="100" step="10" min="10">
+                        </div>
+                        <div class="input-group">
+                            <label>Макс. смещение (Ось X, м):</label>
+                            <input type="number" id="axisMaxX" placeholder="Авто" step="100" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Макс. глубина (Ось Y, м):</label>
+                            <input type="number" id="axisMaxY" placeholder="Авто" step="100" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Размер числовых подписей по осям (px):</label>
+                            <input type="number" id="axisFontSize" value="10" step="1" min="6" max="30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Точка забоя T3 -->
+                <div class="well-section">
+                    <h3 onclick="toggleSection(this)">Точка забоя T3</h3>
+                    <div class="well-section-content">
+                        <div class="input-group">
+                            <label>Глубина по вертикали T3 (м):</label>
+                            <input type="number" id="t3Depth" placeholder="Введите глубину">
+                        </div>
+                        <div class="input-group">
+                            <label>Смещение T3 (м):</label>
+                            <input type="number" id="t3Offset" placeholder="Введите смещение">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calculateProfile()">Построить профиль</button>
+            </div>
+
+            <div class="canvas-section">
+                <div class="scale-controls">
+                    <label>Масштаб: <span id="scaleValue">100</span>%</label>
+                    <button class="scale-btn" onclick="changeScale(-10)">−</button>
+                    <input type="range" id="scaleSlider" min="10" max="140" value="100" oninput="setScale(this.value)">
+                    <button class="scale-btn" onclick="changeScale(10)">+</button>
+                    
+                    <div class="scale-actions">
+                        <button class="scale-btn" onclick="downloadProfile('jpeg')" title="Скачать JPEG (HD)">JPEG ⬇</button>
+                        <button class="scale-btn" onclick="downloadProfile('png')" title="Скачать PNG (HD)">PNG ⬇</button>
+                        <button class="scale-btn" onclick="downloadProfileSVG()" title="Скачать SVG (векторный)">SVG ⬇</button>
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="profileCanvas"></canvas>
+                </div>
+                <div class="info-panel">
+                    <h3>Информация о профиле</h3>
+                    <div id="profileInfo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('profileCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        
+        // Переменная для хранения масштаба (в процентах)
+        let userScale = 100;
+        // Базовый размер canvas
+        const baseWidth = 900;
+        const baseHeight = 700;
+        // Последние рассчитанные точки
+        let lastPoints = [];
+        let lastT1Points = [];
+        let lastT3Point = null;
+        
+        // Функции управления масштабом
+        function setScale(value) {
+            userScale = parseInt(value);
+            document.getElementById('scaleValue').textContent = userScale;
+            document.getElementById('scaleSlider').value = userScale;
+            calculateProfile();
+        }
+        
+        function changeScale(delta) {
+            let newScale = userScale + delta;
+            newScale = Math.max(10, Math.min(140, newScale));
+            setScale(newScale);
+        }
+        
+        function resetScale() {
+            setScale(100);
+        }
+        
+        // Установка размеров canvas в зависимости от масштаба
+        function resizeCanvas() {
+            // Учитываем плотность пикселей экрана для более чёткой отрисовки (HiDPI)
+            const dpr = window.devicePixelRatio || 1;
+            const displayWidth = baseWidth * (userScale / 100);
+            const displayHeight = baseHeight * (userScale / 100);
+
+            // Размер в CSS‑пикселях (как видит пользователь)
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+
+            // Внутреннее разрешение — умножаем на dpr для высокой чёткости
+            canvas.width = displayWidth * dpr;
+            canvas.height = displayHeight * dpr;
+        }
+
+        // Функция сворачивания/разворачивания секции
+        function toggleSection(header) {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // Удаление секции
+        function deleteSection(event, btn) {
+            event.stopPropagation();
+            if (confirm('Удалить этот участок?')) {
+                const section = btn.closest('.well-section');
+                section.remove();
+                calculateProfile();
+            }
+        }
+
+        // Добавление новой секции
+        function addSection(type) {
+            const container = document.getElementById('sections-container');
+            const div = document.createElement('div');
+            div.className = 'well-section expanded draggable';
+            div.dataset.sectionType = type;
+            div.draggable = true;
+
+            let title = '';
+            let content = '';
+
+            if (type === 'build') {
+                title = 'Участок набора угла';
+                content = `
+                    <div class="input-group">
+                        <label>Начальный зенитный угол (°):</label>
+                        <input type="number" class="start-angle" value="0" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Конечный зенитный угол (°):</label>
+                        <input type="number" class="end-angle" value="30" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Радиус кривизны (м):</label>
+                        <input type="number" class="radius" value="300" step="10" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Интенсивность искривления (°/10м):</label>
+                        <input type="number" class="intensity" value="1" step="0.1" min="0.1">
+                    </div>
+                `;
+            } else if (type === 'hold') {
+                title = 'Участок стабилизации';
+                content = `
+                    <div class="input-group">
+                        <label>Зенитный угол (°):</label>
+                        <input type="number" class="angle" value="30" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Длина участка (м):</label>
+                        <input type="number" class="length" value="200" step="10" min="0">
+                    </div>
+                `;
+            } else if (type === 'drop') {
+                title = 'Участок донабора угла';
+                content = `
+                    <div class="input-group">
+                        <label>Начальный зенитный угол (°):</label>
+                        <input type="number" class="start-angle" value="30" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Конечный зенитный угол (°):</label>
+                        <input type="number" class="end-angle" value="90" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Радиус кривизны (м):</label>
+                        <input type="number" class="radius" value="200" step="10" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Интенсивность искривления (°/10м):</label>
+                        <input type="number" class="intensity" value="3" step="0.1" min="0.1">
+                    </div>
+                `;
+            } else if (type === 'horizontal') {
+                title = 'Горизонтальный участок';
+                content = `
+                    <div class="input-group">
+                        <label>Зенитный угол (°):</label>
+                        <input type="number" class="angle" value="90" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Длина участка (м):</label>
+                        <input type="number" class="length" value="500" step="10" min="0">
+                    </div>
+                `;
+            } else if (type === 'angleDrop') {
+                title = 'Участок сброса угла';
+                content = `
+                    <div class="input-group">
+                        <label>Начальный зенитный угол (°):</label>
+                        <input type="number" class="start-angle" value="30" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Конечный зенитный угол (°):</label>
+                        <input type="number" class="end-angle" value="10" step="0.1" min="0" max="90">
+                    </div>
+                    <div class="input-group">
+                        <label>Радиус кривизны (м):</label>
+                        <input type="number" class="radius" value="300" step="10" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Интенсивность искривления (°/10м):</label>
+                        <input type="number" class="intensity" value="1" step="0.1" min="0.1">
+                    </div>
+                `;
+            }
+
+            div.innerHTML = `
+                <h3 onclick="toggleSection(this)">${title} <span class="delete-btn" onclick="deleteSection(event, this)">✕</span></h3>
+                <div class="well-section-content">
+                    ${content}
+                </div>
+            `;
+
+            container.appendChild(div);
+            initDragAndDrop();
+            // Инициализируем связку радиус ↔ интенсивность для нового участка (берем радиус за основу)
+            updateCurvatureForSection(div, 'radius');
+            calculateProfile();
+        }
+
+        // Работа с интервалами продуктивных пластов
+        function addReservoirInterval() {
+            const container = document.getElementById('reservoir-container');
+            if (!container) return;
+
+            const div = document.createElement('div');
+            div.className = 'interval-group reservoir-interval';
+            div.innerHTML = `
+                <span class="interval-delete-btn" onclick="deleteInterval(event, this)" title="Удалить пласт">✕</span>
+                <div class="input-group">
+                    <label>Глубина кровли (м):</label>
+                    <input type="number" class="reservoir-roof" placeholder="Введите глубину">
+                </div>
+                <div class="input-group">
+                    <label>Глубина подошвы (м):</label>
+                    <input type="number" class="reservoir-base" placeholder="Введите глубину">
+                </div>
+                <div class="input-group">
+                    <label>Глубина по вертикали T1 (м):</label>
+                    <input type="number" class="reservoir-t1-depth" placeholder="Введите глубину T1">
+                </div>
+                <div class="input-group">
+                    <label>Смещение T1 (м):</label>
+                    <input type="number" class="reservoir-t1-offset" placeholder="Введите смещение T1">
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // Работа с интервалами вертикальных границ коридора
+        function addCorridorInterval() {
+            const container = document.getElementById('corridor-container');
+            if (!container) return;
+
+            const div = document.createElement('div');
+            div.className = 'interval-group corridor-interval';
+            div.innerHTML = `
+                <span class="interval-delete-btn" onclick="deleteInterval(event, this)" title="Удалить границы">✕</span>
+                <div class="input-group">
+                    <label>Верхняя граница (м):</label>
+                    <input type="number" class="corridor-top" placeholder="Введите глубину">
+                </div>
+                <div class="input-group">
+                    <label>Нижняя граница (м):</label>
+                    <input type="number" class="corridor-bottom" placeholder="Введите глубину">
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function deleteInterval(event, btn) {
+            event.stopPropagation();
+            const group = btn.closest('.interval-group');
+            if (group) {
+                group.remove();
+                calculateProfile();
+            }
+        }
+
+        // Drag and Drop функциональность
+        function initDragAndDrop() {
+            const draggableSections = document.querySelectorAll('.well-section.draggable');
+            const container = document.getElementById('sections-container');
+            
+            // Remove old listeners to avoid duplicates (cloneNode trick or just rely on replacing elements not adding listeners repeatedly? 
+            // Better to just add listeners to new elements. But here we re-select all.
+            // Let's rely on the fact that existing elements have listeners. 
+            // Actually, adding same listener twice is bad. 
+            // A simple way is to remove 'draggable' class and re-add or handle it better.
+            // For simplicity in this script, we'll just re-apply. 
+            // NOTE: Ideally we should use event delegation for drag too, but HTML5 DnD is tricky with delegation.
+            // We'll clean up by cloning the node to strip listeners? No, that loses state.
+            // Let's just iterate and ensure we don't double bind? 
+            // Or just bind to the new element in addSection.
+            // But initDragAndDrop is called on load too.
+            // Let's make initDragAndDrop only bind to elements that don't have a flag.
+            
+            draggableSections.forEach(section => {
+                if (section.dataset.dndInit) return;
+                section.dataset.dndInit = "true";
+
+                section.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    section.classList.add('dragging');
+                });
+
+                section.addEventListener('dragend', (e) => {
+                    section.classList.remove('dragging');
+                    document.querySelectorAll('.well-section').forEach(s => {
+                        s.classList.remove('drag-over');
+                    });
+                    calculateProfile(); // Recalculate order
+                });
+
+                section.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    const dragging = document.querySelector('.dragging');
+                    if (dragging && dragging !== section) {
+                        const rect = section.getBoundingClientRect();
+                        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                        
+                        if (next) {
+                            section.parentNode.insertBefore(dragging, section.nextSibling);
+                        } else {
+                            section.parentNode.insertBefore(dragging, section);
+                        }
+                    }
+                });
+
+                section.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    const dragging = document.querySelector('.dragging');
+                    if (dragging && dragging !== section) {
+                        section.classList.add('drag-over');
+                    }
+                });
+
+                section.addEventListener('dragleave', (e) => {
+                    section.classList.remove('drag-over');
+                });
+                
+                section.addEventListener('drop', (e) => {
+                     e.preventDefault();
+                     section.classList.remove('drag-over');
+                });
+            });
+        }
+
+        // Делегирование событий для обновления данных
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('input')) {
+                const section = e.target.closest('.well-section');
+                if (section) {
+                    // Связка радиус ↔ интенсивность
+                    if (e.target.matches('.radius')) {
+                        updateCurvatureForSection(section, 'radius');
+                    } else if (e.target.matches('.intensity')) {
+                        updateCurvatureForSection(section, 'intensity');
+                    }
+                }
+                // Не запускаем пересчет профиля на каждый ввод, пользователь жмет кнопку или Enter.
+            }
+        });
+
+        // Пересчет пары "радиус ↔ интенсивность искривления"
+        function updateCurvatureForSection(section, changedField) {
+            if (!section) return;
+            const type = section.dataset.sectionType;
+            if (type !== 'build' && type !== 'drop' && type !== 'angleDrop') return;
+
+            const radiusInput = section.querySelector('.radius');
+            const intensityInput = section.querySelector('.intensity');
+            
+            if (!radiusInput || !intensityInput) return;
+
+            if (changedField === 'radius') {
+                const radius = parseFloat(radiusInput.value);
+                if (radius > 0) {
+                    const intensity = (10 * 180) / (Math.PI * radius);
+                    intensityInput.value = intensity.toFixed(2);
+                }
+            } else if (changedField === 'intensity') {
+                const intensity = parseFloat(intensityInput.value);
+                if (intensity > 0) {
+                    const radius = (10 * 180) / (Math.PI * intensity);
+                    radiusInput.value = radius.toFixed(2);
+                }
+            }
+        }
+
+        // Расчет координат точки на дуге
+        function calculateBuildArcPoint(startX, startY, radius, startAngle, currentAngle) {
+            const startAngleRad = startAngle * Math.PI / 180;
+            const currentAngleRad = currentAngle * Math.PI / 180;
+            
+            const deltaX = radius * (Math.cos(startAngleRad) - Math.cos(currentAngleRad));
+            const deltaY = radius * (Math.sin(currentAngleRad) - Math.sin(startAngleRad));
+            
+            return { 
+                x: startX + deltaX, 
+                y: startY + deltaY, 
+                angle: currentAngle 
+            };
+        }
+
+        // Обработка участка набора угла
+        function processBuildSection(section, currentX, currentY, currentAngle) {
+            const startAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+            const endAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+            const radius = parseFloat(section.querySelector('.radius').value) || 1;
+            const points = [];
+            
+            const angleChange = endAngle - startAngle;
+            if (angleChange > 0 && radius > 0) {
+                const arcLength = radius * (angleChange * Math.PI / 180);
+                const steps = Math.ceil(arcLength / 5);
+                
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / steps;
+                    const intermediateAngle = startAngle + angleChange * t;
+                    const point = calculateBuildArcPoint(
+                        currentX,
+                        currentY,
+                        radius,
+                        startAngle,
+                        intermediateAngle
+                    );
+                    points.push({ ...point, section: 'build' });
+                }
+            }
+            
+            return points;
+        }
+
+        // Обработка участка стабилизации
+        function processHoldSection(section, currentX, currentY, currentAngle) {
+            const angle = parseFloat(section.querySelector('.angle').value) || 0;
+            const length = parseFloat(section.querySelector('.length').value) || 0;
+            const points = [];
+            
+            if (length > 0) {
+                const dx = length * Math.sin(angle * Math.PI / 180);
+                const dy = length * Math.cos(angle * Math.PI / 180);
+                currentX += dx;
+                currentY += dy;
+                points.push({ x: currentX, y: currentY, angle: angle, section: 'hold' });
+            }
+            
+            return { points, currentX, currentY, currentAngle: angle };
+        }
+
+        // Обработка участка донабора угла
+        function processDropSection(section, currentX, currentY, currentAngle) {
+            const startAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+            const endAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+            const radius = parseFloat(section.querySelector('.radius').value) || 1;
+            const points = [];
+            
+            const angleChange = endAngle - startAngle;
+            if (angleChange > 0 && radius > 0) {
+                const arcLength = radius * (angleChange * Math.PI / 180);
+                const steps = Math.ceil(arcLength / 5);
+                
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / steps;
+                    const intermediateAngle = startAngle + angleChange * t;
+                    const point = calculateBuildArcPoint(
+                        currentX,
+                        currentY,
+                        radius,
+                        startAngle,
+                        intermediateAngle
+                    );
+                    points.push({ ...point, section: 'drop' });
+                }
+            }
+            
+            return { points, currentAngle: endAngle };
+        }
+
+        // Обработка горизонтального участка
+        function processHorizontalSection(section, currentX, currentY, currentAngle) {
+            const angle = parseFloat(section.querySelector('.angle').value) || 90;
+            const length = parseFloat(section.querySelector('.length').value) || 0;
+            const points = [];
+            
+            if (length > 0) {
+                const dx = length * Math.sin(angle * Math.PI / 180);
+                const dy = length * Math.cos(angle * Math.PI / 180);
+                currentX += dx;
+                currentY += dy;
+                points.push({ x: currentX, y: currentY, angle: angle, section: 'horizontal' });
+            }
+            
+            return { points, currentX, currentY, currentAngle: angle };
+        }
+
+        // Обработка участка сброса угла
+        function processAngleDropSection(section, currentX, currentY, currentAngle) {
+            const startAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+            const endAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+            const radius = parseFloat(section.querySelector('.radius').value) || 1;
+            const points = [];
+            
+            // Сброс угла считаем по формулам:
+            // горизонтальная проекция = R * (cos(угол_текущий) - cos(угол_начала))
+            // вертикальная проекция   = R * (sin(угол_начала) - sin(угол_текущего))
+            const angleDiff = startAngle - endAngle;
+            if (angleDiff > 0 && radius > 0) {
+                const arcLength = radius * (angleDiff * Math.PI / 180);
+                const steps = Math.ceil(arcLength / 5);
+                const angleStep = -angleDiff / steps;
+
+                for (let i = 1; i <= steps; i++) {
+                    const intermediateAngle = startAngle + angleStep * i;
+                    const startRad = startAngle * Math.PI / 180;
+                    const currentRad = intermediateAngle * Math.PI / 180;
+
+                    const deltaX = radius * (Math.cos(currentRad) - Math.cos(startRad));
+                    const deltaY = radius * (Math.sin(startRad) - Math.sin(currentRad));
+
+                    const x = currentX + deltaX;
+                    const y = currentY + deltaY;
+
+                    points.push({
+                        x,
+                        y,
+                        angle: intermediateAngle,
+                        section: 'angleDrop'
+                    });
+                }
+
+                if (points.length > 0) {
+                    const last = points[points.length - 1];
+                    currentX = last.x;
+                    currentY = last.y;
+                    currentAngle = endAngle;
+                }
+            }
+
+            return { points, currentX, currentY, currentAngle };
+        }
+
+        // Расчет профиля скважины
+        function calculateProfile() {
+            // Вертикальный участок
+            const verticalSection = document.querySelector('[data-section-type="vertical"]');
+            const verticalLength = parseFloat(verticalSection.querySelector('.vertical-length').value) || 0;
+
+            const points = [];
+            let currentX = 0;
+            let currentY = 0;
+            let currentAngle = 0;
+            
+            // Переменная для расчета глубины по стволу
+            let totalMeasuredDepth = 0;
+
+            // Начальная точка
+            points.push({ x: 0, y: 0, angle: 0, section: 'start' });
+
+            // Вертикальный
+            currentY = verticalLength;
+            points.push({ x: currentX, y: currentY, angle: 0, section: 'vertical' });
+            
+            // Глубина по стволу для вертикального участка равна его длине
+            totalMeasuredDepth += verticalLength;
+
+            // Остальные участки
+            const sections = document.querySelectorAll('#sections-container .well-section');
+            
+            sections.forEach(section => {
+                const sectionType = section.dataset.sectionType;
+                
+                switch(sectionType) {
+                    case 'build':
+                        const buildPoints = processBuildSection(section, currentX, currentY, currentAngle);
+                        points.push(...buildPoints);
+                        
+                        // Расчет длины для набора угла: Pi * R * (deltaAngle / 180)
+                        const buildStartAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+                        const buildEndAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+                        const buildRadius = parseFloat(section.querySelector('.radius').value) || 0;
+                        const buildAngleDiff = Math.abs(buildEndAngle - buildStartAngle);
+                        const buildLength = Math.PI * buildRadius * (buildAngleDiff / 180);
+                        totalMeasuredDepth += buildLength;
+
+                        if (buildPoints.length > 0) {
+                            const lastPoint = buildPoints[buildPoints.length - 1];
+                            currentX = lastPoint.x;
+                            currentY = lastPoint.y;
+                            currentAngle = parseFloat(section.querySelector('.end-angle').value) || currentAngle;
+                        }
+                        break;
+                        
+                    case 'hold':
+                        const holdResult = processHoldSection(section, currentX, currentY, currentAngle);
+                        points.push(...holdResult.points);
+                        
+                        // Расчет длины для стабилизации: длина участка (которая равна deltaTVD / cos(angle))
+                        // Мы берем введенную длину, так как она соответствует формуле
+                        const holdLength = parseFloat(section.querySelector('.length').value) || 0;
+                        totalMeasuredDepth += holdLength;
+
+                        currentX = holdResult.currentX;
+                        currentY = holdResult.currentY;
+                        currentAngle = holdResult.currentAngle;
+                        break;
+                        
+                    case 'drop':
+                        const dropResult = processDropSection(section, currentX, currentY, currentAngle);
+                        points.push(...dropResult.points);
+                        
+                        // Расчет длины для донабора угла: аналогично набору
+                        const dropStartAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+                        const dropEndAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+                        const dropRadius = parseFloat(section.querySelector('.radius').value) || 0;
+                        const dropAngleDiff = Math.abs(dropEndAngle - dropStartAngle);
+                        const dropLength = Math.PI * dropRadius * (dropAngleDiff / 180);
+                        totalMeasuredDepth += dropLength;
+
+                        if (dropResult.points.length > 0) {
+                            const lastPoint = dropResult.points[dropResult.points.length - 1];
+                            currentX = lastPoint.x;
+                            currentY = lastPoint.y;
+                            currentAngle = dropResult.currentAngle;
+                        }
+                        break;
+                        
+                    case 'horizontal':
+                        const horizontalResult = processHorizontalSection(section, currentX, currentY, currentAngle);
+                        points.push(...horizontalResult.points);
+                        
+                        // Расчет длины для горизонта: равна длине участка
+                        const horizLength = parseFloat(section.querySelector('.length').value) || 0;
+                        totalMeasuredDepth += horizLength;
+
+                        currentX = horizontalResult.currentX;
+                        currentY = horizontalResult.currentY;
+                        currentAngle = horizontalResult.currentAngle;
+                        break;
+                    
+                    case 'angleDrop':
+                        const angleDropResult = processAngleDropSection(section, currentX, currentY, currentAngle);
+                        points.push(...angleDropResult.points);
+
+                        // Длина участка сброса угла:
+                        // L = (угол_начала - угол_конца) * π * R / 180
+                        const adStartAngle = parseFloat(section.querySelector('.start-angle').value) || 0;
+                        const adEndAngle = parseFloat(section.querySelector('.end-angle').value) || 0;
+                        const adRadius = parseFloat(section.querySelector('.radius').value) || 0;
+                        const adAngleDiff = (adStartAngle - adEndAngle);
+                        if (adAngleDiff > 0 && adRadius > 0) {
+                            const adLength = Math.PI * adRadius * (adAngleDiff / 180);
+                            totalMeasuredDepth += adLength;
+                        }
+
+                        currentX = angleDropResult.currentX;
+                        currentY = angleDropResult.currentY;
+                        currentAngle = angleDropResult.currentAngle;
+                        break;
+                }
+            });
+            
+            // Расчет точек T1 и T3 по пользовательскому вводу
+            const t1Points = [];
+            const reservoirElems = document.querySelectorAll('.reservoir-interval');
+            reservoirElems.forEach((el, index) => {
+                const depthInput = el.querySelector('.reservoir-t1-depth');
+                const offsetInput = el.querySelector('.reservoir-t1-offset');
+                if (depthInput && offsetInput) {
+                    const depth = parseFloat(depthInput.value);
+                    const offset = parseFloat(offsetInput.value);
+                    if (!isNaN(depth) && !isNaN(offset)) {
+                        t1Points.push({ x: offset, y: depth, index: index + 1 });
+                    }
+                }
+            });
+
+            let t3Point = null;
+            const t3DepthInput = document.getElementById('t3Depth');
+            const t3OffsetInput = document.getElementById('t3Offset');
+            if (t3DepthInput && t3OffsetInput) {
+                const t3Depth = parseFloat(t3DepthInput.value);
+                const t3Offset = parseFloat(t3OffsetInput.value);
+                if (!isNaN(t3Depth) && !isNaN(t3Offset)) {
+                    t3Point = { x: t3Offset, y: t3Depth };
+                }
+            }
+
+            lastPoints = points;
+            lastT1Points = t1Points;
+            lastT3Point = t3Point;
+
+            resizeCanvas();
+            drawProfile(points);
+            displayInfo(points, totalMeasuredDepth, t1Points, t3Point);
+        }
+
+        // Отрисовка профиля на canvas
+        function drawProfile(points, exportScale = 1) {
+            if (points.length === 0) return;
+
+            // resizeCanvas вызывается снаружи (в calculateProfile или downloadImage)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Функция масштабирования размеров элементов
+            const s = (val) => val * exportScale;
+
+            let minX = 0, maxX = 0, minY = 0, maxY = 0;
+            points.forEach(p => {
+                minX = Math.min(minX, p.x);
+                maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+            });
+
+            // Получаем данные о продуктивных пластах
+            const reservoirIntervals = Array.from(document.querySelectorAll('.reservoir-interval')).map(el => {
+                const roof = parseFloat(el.querySelector('.reservoir-roof')?.value);
+                const base = parseFloat(el.querySelector('.reservoir-base')?.value);
+                const deviation = parseFloat(el.querySelector('.reservoir-roof-deviation')?.value);
+                return {
+                    roofDepth: !isNaN(roof) ? roof : null,
+                    baseDepth: !isNaN(base) ? base : null,
+                    roofDeviation: !isNaN(deviation) ? deviation : null
+                };
+            }).filter(r => r.roofDepth !== null || r.baseDepth !== null);
+
+            // Получаем данные о вертикальных границах коридора
+            const corridorIntervals = Array.from(document.querySelectorAll('.corridor-interval')).map(el => {
+                const top = parseFloat(el.querySelector('.corridor-top')?.value);
+                const bottom = parseFloat(el.querySelector('.corridor-bottom')?.value);
+                return {
+                    top: !isNaN(top) ? top : null,
+                    bottom: !isNaN(bottom) ? bottom : null
+                };
+            }).filter(c => c.top !== null || c.bottom !== null);
+
+            // Обновляем границы по пластам
+            reservoirIntervals.forEach(r => {
+                if (r.roofDepth !== null) {
+                    minY = Math.min(minY, r.roofDepth);
+                    maxY = Math.max(maxY, r.roofDepth);
+                }
+                if (r.baseDepth !== null) {
+                    minY = Math.min(minY, r.baseDepth);
+                    maxY = Math.max(maxY, r.baseDepth);
+                }
+            });
+
+            // Обновляем границы по коридору
+            corridorIntervals.forEach(c => {
+                if (c.top !== null) {
+                    minY = Math.min(minY, c.top);
+                    maxY = Math.max(maxY, c.top);
+                }
+                if (c.bottom !== null) {
+                    minY = Math.min(minY, c.bottom);
+                    maxY = Math.max(maxY, c.bottom);
+                }
+            });
+
+            // Учитываем точки T1 и T3 в границах
+            if (lastT1Points && lastT1Points.length) {
+                lastT1Points.forEach(p => {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                });
+            }
+            if (lastT3Point) {
+                minX = Math.min(minX, lastT3Point.x);
+                maxX = Math.max(maxX, lastT3Point.x);
+                minY = Math.min(minY, lastT3Point.y);
+                maxY = Math.max(maxY, lastT3Point.y);
+            }
+
+            // Настройки осей пользователя
+            const userGridStep = parseFloat(document.getElementById('gridStep').value) || 100;
+            const userMaxX = parseFloat(document.getElementById('axisMaxX').value);
+            const userMaxY = parseFloat(document.getElementById('axisMaxY').value);
+
+            if (!isNaN(userMaxX) && userMaxX > maxX) {
+                maxX = userMaxX;
+            }
+            if (!isNaN(userMaxY) && userMaxY > maxY) {
+                maxY = userMaxY;
+            }
+
+            const padding = s(70);
+            const scaleX = (canvas.width - 2 * padding) / Math.max(maxX - minX, 1);
+            const scaleY = (canvas.height - 2 * padding) / Math.max(maxY - minY, 1);
+            const scale = Math.min(scaleX, scaleY);
+
+            const transformX = (x) => padding + (x - minX) * scale;
+            const transformY = (y) => padding + (y - minY) * scale;
+
+            // Заливка фона белым для экспорта (чтобы не было прозрачности)
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Сетка
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = s(1);
+            ctx.setLineDash([]);
+            const gridStep = userGridStep;
+            for (let x = Math.floor(minX / gridStep) * gridStep; x <= maxX; x += gridStep) {
+                const tx = transformX(x);
+                ctx.beginPath();
+                ctx.moveTo(tx, 0);
+                ctx.lineTo(tx, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = Math.floor(minY / gridStep) * gridStep; y <= maxY; y += gridStep) {
+                const ty = transformY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, ty);
+                ctx.lineTo(canvas.width, ty);
+                ctx.stroke();
+            }
+
+            // Отрисовка пластов
+            ctx.save();
+            ctx.lineWidth = s(2);
+            ctx.strokeStyle = '#8B4513'; // Коричневый цвет
+            ctx.setLineDash([s(10), s(5)]); // Пунктир
+
+            reservoirIntervals.forEach((r, index) => {
+                if (r.roofDepth !== null) {
+                    const y = transformY(r.roofDepth);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                if (r.baseDepth !== null) {
+                    const y = transformY(r.baseDepth);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            });
+            ctx.restore();
+
+            // Отрисовка коридора
+            ctx.save();
+            ctx.lineWidth = s(2);
+            ctx.strokeStyle = '#28a745'; // Зеленый цвет
+            ctx.setLineDash([s(10), s(5)]); // Пунктир
+
+            corridorIntervals.forEach(c => {
+                if (c.top !== null) {
+                    const y = transformY(c.top);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                if (c.bottom !== null) {
+                    const y = transformY(c.bottom);
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            });
+            ctx.restore();
+
+            // Траектория
+            ctx.strokeStyle = '#E0903F';
+            ctx.lineWidth = s(3);
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            
+            points.forEach((p, i) => {
+                const x = transformX(p.x);
+                const y = transformY(p.y);
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Черточки границ участков
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = s(2);
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                // Граница, если это первая точка, последняя точка, или следующая точка принадлежит другой секции
+                const isBoundary = (i === 0) || (i === points.length - 1) || (points[i+1] && points[i].section !== points[i+1].section);
+                
+                if (isBoundary) {
+                    const x = transformX(p.x);
+                    const y = transformY(p.y);
+                    const angleRad = p.angle * Math.PI / 180;
+                    const len = s(6); // Длина половины черточки
+                    
+                    const dx = len * Math.cos(angleRad);
+                    const dy = -len * Math.sin(angleRad);
+                    
+                    ctx.moveTo(x - dx, y - dy);
+                    ctx.lineTo(x + dx, y + dy);
+                }
+            });
+            ctx.stroke();
+
+            // Оси
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = s(2);
+            ctx.setLineDash([]);
+            ctx.font = `${s(14)}px Arial`;
+            ctx.fillStyle = '#333';
+
+            ctx.beginPath();
+            ctx.moveTo(transformX(0), transformY(0));
+            ctx.lineTo(transformX(maxX), transformY(0));
+            ctx.stroke();
+            const axisLabelX = (transformX(0) + transformX(maxX)) / 2 - s(40);
+            ctx.fillText('Отход (м)', axisLabelX, transformY(0) - s(25));
+
+            ctx.beginPath();
+            ctx.moveTo(transformX(0), transformY(0));
+            ctx.lineTo(transformX(0), transformY(maxY));
+            ctx.stroke();
+            ctx.save();
+            ctx.translate(s(20), canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Глубина по вертикали (м)', 0, 0);
+            ctx.restore();
+
+            // Подписи
+            const tickFontSize = parseFloat(document.getElementById('axisFontSize')?.value) || 10;
+            ctx.font = `${s(tickFontSize)}px Arial`;
+            ctx.fillStyle = '#666';
+            for (let x = Math.floor(minX / gridStep) * gridStep; x <= maxX; x += gridStep) {
+                const tx = transformX(x);
+                ctx.fillText(x.toFixed(0), tx - s(15), transformY(0) - s(10));
+            }
+            for (let y = Math.floor(minY / gridStep) * gridStep; y <= maxY; y += gridStep) {
+                const ty = transformY(y);
+                ctx.fillText(y.toFixed(0), transformX(0) - s(35), ty + s(5));
+            }
+            
+            // Отрисовка точек T1 и T3
+            if (lastT1Points && lastT1Points.length) {
+                lastT1Points.forEach(p => {
+                    const x = transformX(p.x);
+                    const y = transformY(p.y);
+                    ctx.fillStyle = '#d9534f';
+                    ctx.beginPath();
+                    ctx.arc(x, y, s(4), 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.font = `${s(tickFontSize + 2)}px Arial`;
+                    ctx.fillText(`T1-${p.index}`, x + s(6), y - s(6));
+                });
+            }
+
+            if (lastT3Point) {
+                const x = transformX(lastT3Point.x);
+                const y = transformY(lastT3Point.y);
+                ctx.fillStyle = '#17a2b8';
+                ctx.beginPath();
+                ctx.arc(x, y, s(4), 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.font = `${s(12)}px Arial`;
+                ctx.fillText('T3', x + s(6), y - s(6));
+            }
+        }
+
+        // Вывод информации
+        function displayInfo(points, totalMeasuredDepth, t1Points, t3Point) {
+            if (points.length === 0) return;
+
+            const lastPoint = points[points.length - 1];
+            const totalVerticalDepth = lastPoint.y;
+
+            let t1Info = '';
+            if (t1Points && t1Points.length) {
+                t1Info = t1Points.map(p =>
+                    `<div class="info-item" style="color: #8B4513;"><strong>Точка входа в пласт T1-${p.index}:</strong> Смещение: ${p.x.toFixed(2)} м, Глубина: ${p.y.toFixed(2)} м</div>`
+                ).join('');
+            }
+            let t3Info = '';
+            if (t3Point) {
+                t3Info = `<div class="info-item" style="color: #17a2b8;"><strong>Точка забоя (T3):</strong> Смещение: ${t3Point.x.toFixed(2)} м, Глубина: ${t3Point.y.toFixed(2)} м</strong></div>`;
+            }
+
+            const info = `
+                <div class="info-item"><strong>Глубина по вертикали:</strong> ${totalVerticalDepth.toFixed(2)} м</div>
+                <div class="info-item"><strong>Глубина по стволу:</strong> ${totalMeasuredDepth.toFixed(2)} м</div>
+                ${t1Info}
+                ${t3Info}
+            `;
+
+            document.getElementById('profileInfo').innerHTML = info;
+        }
+
+        // Скачивание профиля
+        function downloadProfile(format) {
+            if (lastPoints.length === 0) return;
+
+            const exportScale = 3; // Коэффициент качества (3x разрешение)
+            
+            // Сохраняем текущие размеры
+            const originalWidth = canvas.width;
+            const originalHeight = canvas.height;
+
+            // Устанавливаем высокое разрешение
+            canvas.width = baseWidth * (userScale / 100) * exportScale;
+            canvas.height = baseHeight * (userScale / 100) * exportScale;
+
+            // Рисуем с учетом масштаба
+            drawProfile(lastPoints, exportScale);
+
+            // Создаем ссылку для скачивания
+            const link = document.createElement('a');
+            link.download = `profile.${format}`;
+            
+            if (format === 'jpeg') {
+                // Для JPEG нужен белый фон (уже залит в drawProfile), качество 1.0
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+            } else {
+                link.href = canvas.toDataURL('image/png');
+            }
+
+            link.click();
+
+            // Восстанавливаем оригинальные размеры и перерисовываем
+            canvas.width = originalWidth;
+            canvas.height = originalHeight;
+            drawProfile(lastPoints);
+        }
+
+        // Скачивание профиля в формате SVG (векторный)
+        function downloadProfileSVG() {
+            if (lastPoints.length === 0) return;
+
+            // Размер SVG в "экранных" единицах с учетом текущего масштаба
+            const width = baseWidth * (userScale / 100);
+            const height = baseHeight * (userScale / 100);
+
+            const points = lastPoints;
+
+            // Определяем границы по X и Y
+            let minX = 0, maxX = 0, minY = 0, maxY = 0;
+            points.forEach(p => {
+                minX = Math.min(minX, p.x);
+                maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+            });
+
+            // Данные о пласте (несколько интервалов)
+            const reservoirIntervals = Array.from(document.querySelectorAll('.reservoir-interval')).map(el => {
+                const roof = parseFloat(el.querySelector('.reservoir-roof')?.value);
+                const base = parseFloat(el.querySelector('.reservoir-base')?.value);
+                const deviation = parseFloat(el.querySelector('.reservoir-roof-deviation')?.value);
+                return {
+                    roofDepth: !isNaN(roof) ? roof : null,
+                    baseDepth: !isNaN(base) ? base : null,
+                    roofDeviation: !isNaN(deviation) ? deviation : null
+                };
+            }).filter(r => r.roofDepth !== null || r.baseDepth !== null);
+
+            // Данные о коридоре (несколько интервалов)
+            const corridorIntervals = Array.from(document.querySelectorAll('.corridor-interval')).map(el => {
+                const top = parseFloat(el.querySelector('.corridor-top')?.value);
+                const bottom = parseFloat(el.querySelector('.corridor-bottom')?.value);
+                return {
+                    top: !isNaN(top) ? top : null,
+                    bottom: !isNaN(bottom) ? bottom : null
+                };
+            }).filter(c => c.top !== null || c.bottom !== null);
+
+            // Расширяем границы по Y из-за пластов и коридора
+            reservoirIntervals.forEach(r => {
+                if (r.roofDepth !== null) {
+                    minY = Math.min(minY, r.roofDepth);
+                    maxY = Math.max(maxY, r.roofDepth);
+                }
+                if (r.baseDepth !== null) {
+                    minY = Math.min(minY, r.baseDepth);
+                    maxY = Math.max(maxY, r.baseDepth);
+                }
+            });
+            corridorIntervals.forEach(c => {
+                if (c.top !== null) {
+                    minY = Math.min(minY, c.top);
+                    maxY = Math.max(maxY, c.top);
+                }
+                if (c.bottom !== null) {
+                    minY = Math.min(minY, c.bottom);
+                    maxY = Math.max(maxY, c.bottom);
+                }
+            });
+
+            // Настройки осей пользователя
+            const userGridStep = parseFloat(document.getElementById('gridStep').value) || 100;
+            const userMaxX = parseFloat(document.getElementById('axisMaxX').value);
+            const userMaxY = parseFloat(document.getElementById('axisMaxY').value);
+
+            if (!isNaN(userMaxX) && userMaxX > maxX) {
+                maxX = userMaxX;
+            }
+            if (!isNaN(userMaxY) && userMaxY > maxY) {
+                maxY = userMaxY;
+            }
+
+            const padding = 70;
+            const scaleX = (width - 2 * padding) / Math.max(maxX - minX, 1);
+            const scaleY = (height - 2 * padding) / Math.max(maxY - minY, 1);
+            const scale = Math.min(scaleX, scaleY);
+
+            const transformX = (x) => padding + (x - minX) * scale;
+            const transformY = (y) => padding + (y - minY) * scale;
+
+            const gridStep = userGridStep;
+
+            const svgParts = [];
+            svgParts.push('<?xml version="1.0" encoding="UTF-8"?>');
+            svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+
+            // Фон
+            svgParts.push(`<rect x="0" y="0" width="${width}" height="${height}" fill="white"/>`);
+
+            // Сетка
+            svgParts.push(`<g stroke="#e0e0e0" stroke-width="1">`);
+            for (let x = Math.floor(minX / gridStep) * gridStep; x <= maxX; x += gridStep) {
+                const tx = transformX(x);
+                svgParts.push(`<line x1="${tx}" y1="0" x2="${tx}" y2="${height}" />`);
+            }
+            for (let y = Math.floor(minY / gridStep) * gridStep; y <= maxY; y += gridStep) {
+                const ty = transformY(y);
+                svgParts.push(`<line x1="0" y1="${ty}" x2="${width}" y2="${ty}" />`);
+            }
+            svgParts.push(`</g>`);
+
+            // Пласты (кровля и подошва для каждого интервала)
+            if (reservoirIntervals.length > 0) {
+                svgParts.push(`<g stroke="#8B4513" stroke-width="2" stroke-dasharray="10 5" fill="none">`);
+                reservoirIntervals.forEach((r, index) => {
+                    if (r.roofDepth !== null) {
+                        const y = transformY(r.roofDepth);
+                        svgParts.push(`<line x1="0" y1="${y}" x2="${width}" y2="${y}" />`);
+                    }
+                    if (r.baseDepth !== null) {
+                        const y = transformY(r.baseDepth);
+                        svgParts.push(`<line x1="0" y1="${y}" x2="${width}" y2="${y}" />`);
+                    }
+                });
+                svgParts.push(`</g>`);
+            }
+
+            // Учитываем точки T1 и T3 в границах
+            if (lastT1Points && lastT1Points.length) {
+                lastT1Points.forEach(p => {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                });
+            }
+            if (lastT3Point) {
+                minX = Math.min(minX, lastT3Point.x);
+                maxX = Math.max(maxX, lastT3Point.x);
+                minY = Math.min(minY, lastT3Point.y);
+                maxY = Math.max(maxY, lastT3Point.y);
+            }
+
+            // Коридор
+            if (corridorIntervals.length > 0) {
+                svgParts.push(`<g stroke="#28a745" stroke-width="2" stroke-dasharray="10 5" fill="none">`);
+                corridorIntervals.forEach(c => {
+                    if (c.top !== null) {
+                        const y = transformY(c.top);
+                        svgParts.push(`<line x1="0" y1="${y}" x2="${width}" y2="${y}" />`);
+                    }
+                    if (c.bottom !== null) {
+                        const y = transformY(c.bottom);
+                        svgParts.push(`<line x1="0" y1="${y}" x2="${width}" y2="${y}" />`);
+                    }
+                });
+                svgParts.push(`</g>`);
+            }
+
+            // Траектория
+            if (points.length > 0) {
+                let d = '';
+                points.forEach((p, i) => {
+                    const x = transformX(p.x).toFixed(2);
+                    const y = transformY(p.y).toFixed(2);
+                    if (i === 0) {
+                        d += `M ${x} ${y} `;
+                    } else {
+                        d += `L ${x} ${y} `;
+                    }
+                });
+                svgParts.push(`<path d="${d.trim()}" fill="none" stroke="#E0903F" stroke-width="3"/>`);
+            }
+
+            // Черточки границ участков
+            if (points.length > 0) {
+                svgParts.push(`<g stroke="black" stroke-width="2">`);
+                points.forEach((p, i) => {
+                    const isBoundary = (i === 0) || (i === points.length - 1) || (points[i + 1] && points[i].section !== points[i + 1].section);
+                    if (isBoundary) {
+                        const x = transformX(p.x);
+                        const y = transformY(p.y);
+                        const angleRad = p.angle * Math.PI / 180;
+                        const len = 6;
+                        const dx = len * Math.cos(angleRad);
+                        const dy = -len * Math.sin(angleRad);
+                        const x1 = (x - dx).toFixed(2);
+                        const y1 = (y - dy).toFixed(2);
+                        const x2 = (x + dx).toFixed(2);
+                        const y2 = (y + dy).toFixed(2);
+                        svgParts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`);
+                    }
+                });
+                svgParts.push(`</g>`);
+            }
+
+            // Оси
+            svgParts.push(`<g stroke="#333" stroke-width="2" fill="none">`);
+            const x0 = transformX(0);
+            const y0 = transformY(0);
+            svgParts.push(`<line x1="${x0}" y1="${y0}" x2="${transformX(maxX)}" y2="${y0}" />`);
+            svgParts.push(`<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${transformY(maxY)}" />`);
+            svgParts.push(`</g>`);
+
+            // Точки T1 и T3 (по пользовательскому вводу)
+            if (lastT1Points && lastT1Points.length || lastT3Point) {
+                svgParts.push(`<g font-family="Arial" font-size="12">`);
+                if (lastT1Points && lastT1Points.length) {
+                    lastT1Points.forEach(p => {
+                        const x = transformX(p.x);
+                        const y = transformY(p.y);
+                        svgParts.push(`<circle cx="${x}" cy="${y}" r="4" fill="#d9534f" />`);
+                        svgParts.push(`<text x="${x + 6}" y="${y - 6}" fill="#d9534f">T1-${p.index}</text>`);
+                    });
+                }
+                if (lastT3Point) {
+                    const x = transformX(lastT3Point.x);
+                    const y = transformY(lastT3Point.y);
+                    svgParts.push(`<circle cx="${x}" cy="${y}" r="4" fill="#17a2b8" />`);
+                    svgParts.push(`<text x="${x + 6}" y="${y - 6}" fill="#17a2b8">T3</text>`);
+                }
+                svgParts.push(`</g>`);
+            }
+
+            // Подписи осей
+            const tickFontSize = parseFloat(document.getElementById('axisFontSize')?.value) || 10;
+            svgParts.push(`<text x="${(transformX(0) + transformX(maxX)) / 2 - 40}" y="${y0 - 25}" fill="#333" font-family="Arial" font-size="14">Отход (м)</text>`);
+            // Вертикальная подпись оси Y
+            svgParts.push(`<g transform="translate(20 ${height / 2}) rotate(-90)">`);
+            svgParts.push(`<text x="0" y="0" fill="#333" font-family="Arial" font-size="14">Глубина по вертикали (м)</text>`);
+            svgParts.push(`</g>`);
+
+            // Подписи делений
+            svgParts.push(`<g fill="#666" font-family="Arial" font-size="${tickFontSize}">`);
+            for (let x = Math.floor(minX / gridStep) * gridStep; x <= maxX; x += gridStep) {
+                const tx = transformX(x);
+                const labelX = (tx - 15).toFixed(2);
+                const labelY = (y0 - 10).toFixed(2);
+                svgParts.push(`<text x="${labelX}" y="${labelY}">${x.toFixed(0)}</text>`);
+            }
+            for (let y = Math.floor(minY / gridStep) * gridStep; y <= maxY; y += gridStep) {
+                const ty = transformY(y);
+                const labelX = (x0 - 35).toFixed(2);
+                const labelY = (ty + 5).toFixed(2);
+                svgParts.push(`<text x="${labelX}" y="${labelY}">${y.toFixed(0)}</text>`);
+            }
+            svgParts.push(`</g>`);
+
+            svgParts.push(`</svg>`);
+
+            const blob = new Blob([svgParts.join('')], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'profile.svg';
+            link.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Инициализация
+        window.addEventListener('load', () => {
+            initDragAndDrop();
+            calculateProfile();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                calculateProfile();
+            }
+        });
+    </script>
+</body>
+</html>
